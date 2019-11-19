@@ -65,16 +65,18 @@ getBounds board =
         maxY   = fromMaybe 0 $ S.lookupMax cellYs
     in  ((minX, minY), (maxX, maxY))
 
+-- TODO: Make translation clear
 displayBoard :: Board -> String
 displayBoard board =
     let ((minX, minY), (maxX, maxY)) = getBounds board
-        displayCell cell = if S.member cell board then '*' else ' '
+        displayCell cell = if S.member cell board then '■' else ' '
         displayRow y = [ displayCell (x, y) | x <- [minX .. maxX] ]
     in  unlines $ map displayRow [minY .. maxY]
 
+-- TODO: Friendlier quit option than ctrl-c
 displayGame :: Board -> IO ()
 displayGame board =
     let game       = playGame board
         screens    = map (putStrLn . displayBoard) game
         swapScreen = threadDelay 1000000 >> clearScreen
-    in  sequence_ . intersperse swapScreen $ screens
+    in  sequence_ $ clearScreen : intersperse swapScreen screens
