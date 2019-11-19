@@ -22,13 +22,14 @@ import           System.Console.ANSI            ( clearScreen )
 type Board = Set (Int, Int)
 
 gridRange :: ((Int, Int), (Int, Int)) -> [(Int, Int)]
-gridRange ((minX, minY), (maxX, maxY)) =
-    [ (x, y) | x <- [minX .. maxX], y <- [minY .. maxY] ]
+gridRange ((minX, minY), (maxX, maxY)) = do
+    x <- [minX .. maxX]
+    y <- [minY .. maxY]
+    return (x, y)
 
 neighbourGrid :: (Int, Int) -> [(Int, Int)]
 neighbourGrid (x, y) = do
-    x' <- [x - 1 .. x + 1]
-    y' <- [y - 1 .. y + 1]
+    (x', y') <- gridRange ((x - 1, y - 1), (x + 1, y + 1))
     guard (x' /= x || y' /= y)
     return (x', y')
 
