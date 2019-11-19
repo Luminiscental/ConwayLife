@@ -4,6 +4,9 @@ module Lib
     , countNeighbours
     , survives
     , stepBoard
+    , playGame
+    , getBounds
+    , displayBoard
     )
 where
 
@@ -41,6 +44,9 @@ survives board position =
 stepBoard :: Board -> Board
 stepBoard board = S.filter (survives board) board
 
+playGame :: Board -> [Board]
+playGame board = board : playGame (stepBoard board)
+
 getBounds :: Board -> ((Int, Int), (Int, Int))
 getBounds board =
     let cellXs = S.map fst board
@@ -50,3 +56,10 @@ getBounds board =
         minY   = fromMaybe 0 $ S.lookupMin cellYs
         maxY   = fromMaybe 0 $ S.lookupMax cellYs
     in  ((minX, minY), (maxX, maxY))
+
+displayBoard :: Board -> String
+displayBoard board =
+    let ((minX, minY), (maxX, maxY)) = getBounds board
+        displayCell cell = if S.member cell board then '*' else ' '
+        displayRow y = [ displayCell (x, y) | x <- [minX .. maxX] ]
+    in  unlines $ map displayRow [minY .. maxY]
