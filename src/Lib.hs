@@ -21,6 +21,10 @@ import           Control.Monad                  ( guard )
 
 type Board = Set (Int, Int)
 
+gridRange :: ((Int, Int), (Int, Int)) -> [(Int, Int)]
+gridRange ((minX, minY), (maxX, maxY)) =
+    [ (x, y) | x <- [minX .. maxX], y <- [minY .. maxY] ]
+
 neighbourGrid :: (Int, Int) -> [(Int, Int)]
 neighbourGrid (x, y) = do
     x' <- [x - 1 .. x + 1]
@@ -42,7 +46,11 @@ survives board position =
     in  (neighbours == 3) || (alive && neighbours == 2)
 
 stepBoard :: Board -> Board
-stepBoard board = S.filter (survives board) board
+stepBoard board =
+    let ((minX, minY), (maxX, maxY)) = getBounds board
+        cellsToConsider              = S.fromList
+            $ gridRange ((minX - 1, minY - 1), (maxX + 1, maxY + 1))
+    in  S.filter (survives board) cellsToConsider
 
 playGame :: Board -> [Board]
 playGame board = board : playGame (stepBoard board)
