@@ -13,6 +13,7 @@ tests:
 copyright: 2019 Author name here
 maintainer: example@example.com
 dependencies:
+- ansi-terminal
 - extra
 - containers
 - base >= 4.7 && < 5

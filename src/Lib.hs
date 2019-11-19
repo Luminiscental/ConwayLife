@@ -7,17 +7,17 @@ module Lib
     , playGame
     , getBounds
     , displayBoard
+    , displayGame
     )
 where
 
 import           Data.Set                       ( Set )
 import qualified Data.Set                      as S
-import           Data.Maybe                     ( isJust
-                                                , fromMaybe
-                                                )
-import           Data.Tuple.Extra               ( both )
-import           Control.Applicative            ( liftA2 )
+import           Data.Maybe                     ( fromMaybe )
+import           Data.List                      ( intersperse )
 import           Control.Monad                  ( guard )
+import           Control.Concurrent             ( threadDelay )
+import           System.Console.ANSI            ( clearScreen )
 
 type Board = Set (Int, Int)
 
@@ -71,3 +71,10 @@ displayBoard board =
         displayCell cell = if S.member cell board then '*' else ' '
         displayRow y = [ displayCell (x, y) | x <- [minX .. maxX] ]
     in  unlines $ map displayRow [minY .. maxY]
+
+displayGame :: Board -> IO ()
+displayGame board =
+    let game       = playGame board
+        screens    = map (putStrLn . displayBoard) game
+        swapScreen = threadDelay 1000000 >> clearScreen
+    in  sequence_ . intersperse swapScreen $ screens
