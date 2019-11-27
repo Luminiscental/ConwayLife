@@ -17,7 +17,9 @@ import           Data.Maybe                     ( fromMaybe )
 import           Data.List                      ( intersperse )
 import           Control.Monad                  ( guard )
 import           Control.Concurrent             ( threadDelay )
-import           System.Console.ANSI            ( clearScreen )
+import           System.Console.ANSI            ( clearFromCursorToScreenBeginning
+                                                , hideCursor
+                                                )
 
 type Board = Set (Int, Int)
 
@@ -77,7 +79,11 @@ displayBoard board =
 -- TODO: Friendlier quit option than ctrl-c
 displayGame :: Board -> IO ()
 displayGame board =
-    let game       = playGame board
-        screens    = map (putStrLn . displayBoard) game
-        swapScreen = threadDelay 1000000 >> clearScreen
-    in  sequence_ $ clearScreen : intersperse swapScreen screens
+    let game    = playGame board
+        screens = map (putStrLn . displayBoard) game
+        swapScreen =
+                threadDelay 1000000
+                    >> clearFromCursorToScreenBeginning
+                    >> hideCursor
+                    >> putStrLn "Press Ctrl+C to Exit\n========"
+    in  swapScreen >> sequence_ (intersperse swapScreen screens)
