@@ -18,10 +18,11 @@ import           Data.Map.Strict                ( Map )
 import qualified Data.Map.Strict               as M
 import qualified Data.Set                      as S
 import           Data.Maybe                     ( fromMaybe )
+import           Data.List                      ( intersperse )
 import           Control.Monad                  ( guard
                                                 , unless
                                                 )
-import           System.Console.ANSI            ( clearFromCursorToScreenBeginning
+import           System.Console.ANSI            ( clearScreen
                                                 , hideCursor
                                                 , showCursor
                                                 , setCursorPosition
@@ -104,20 +105,32 @@ displayBoard board =
     let ((minX, minY), (maxX, maxY)) = getBounds board
         displayCell cell = if S.member cell board then '■' else ' '
         displayRow y = [ displayCell (x, y) | x <- [minX .. maxX] ]
-    in  unlines $ map displayRow [minY .. maxY]
+        grid = map displayRow [minY .. maxY]
+    in  displayGrid '|' '-' grid
+
+extrasperse :: a -> [a] -> [a]
+extrasperse x xs = x : intersperse x xs ++ [x]
+
+displayGrid :: Char -> Char -> [String] -> String
+displayGrid colSep rowSep grid =
+    let width      = length . head $ grid
+        rowLine    = replicate (width * 2 + 1) rowSep
+        displayRow = extrasperse colSep
+    in  unlines . extrasperse rowLine . map displayRow $ grid
 
 displayGame :: Board -> IO ()
 displayGame board =
-    let game    = playGame board
-        screens = map (putStrLn . displayBoard) game
+    let game        = playGame board
+        screens     = map (putStrLn . displayBoard) game
+        title       = "Press enter to exit"
+        frameTimeMS = 1000
         run (screen : rest) = do
-            clearFromCursorToScreenBeginning
+            clearScreen
             setCursorPosition 0 0
-            let title = "Press enter to exit"
             putStrLn title
             putStrLn $ replicate (length title) '='
             screen
-            pressed <- hWaitForInput stdin 1000
+            pressed <- hWaitForInput stdin frameTimeMS
             unless pressed $ run rest
     in  do
             hideCursor
