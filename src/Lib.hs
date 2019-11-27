@@ -15,11 +15,17 @@ import           Data.Set                       ( Set )
 import qualified Data.Set                      as S
 import           Data.Maybe                     ( fromMaybe )
 import           Data.List                      ( intersperse )
-import           Control.Monad                  ( guard )
+import           Control.Monad                  ( guard
+                                                , unless
+                                                )
 import           Control.Concurrent             ( threadDelay )
 import           System.Console.ANSI            ( clearFromCursorToScreenBeginning
                                                 , hideCursor
+                                                , showCursor
                                                 , setCursorPosition
+                                                )
+import           System.IO                      ( stdin
+                                                , hWaitForInput
                                                 )
 
 type Board = Set (Int, Int)
@@ -69,7 +75,7 @@ getBounds board =
         maxY   = fromMaybe 0 $ S.lookupMax cellYs
     in  ((minX, minY), (maxX, maxY))
 
--- TODO: Make translation clear
+-- TODO: Make translation/axis positions clear
 displayBoard :: Board -> String
 displayBoard board =
     let ((minX, minY), (maxX, maxY)) = getBounds board
@@ -77,15 +83,20 @@ displayBoard board =
         displayRow y = [ displayCell (x, y) | x <- [minX .. maxX] ]
     in  unlines $ map displayRow [minY .. maxY]
 
--- TODO: Friendlier quit option than ctrl-c
 displayGame :: Board -> IO ()
 displayGame board =
     let game    = playGame board
         screens = map (putStrLn . displayBoard) game
-        swapScreen =
-                threadDelay 1000000
-                    >> clearFromCursorToScreenBeginning
-                    >> hideCursor
-                    >> setCursorPosition 0 0
-                    >> putStrLn "Press Ctrl+C to Exit\n========"
-    in  swapScreen >> sequence_ (intersperse swapScreen screens)
+        run (screen : rest) = do
+            clearFromCursorToScreenBeginning
+            setCursorPosition 0 0
+            let title = "Press enter to exit"
+            putStrLn title
+            putStrLn $ replicate (length title) '='
+            screen
+            pressed <- hWaitForInput stdin 1000
+            unless pressed $ run rest
+    in  do
+            hideCursor
+            run screens
+            showCursor
