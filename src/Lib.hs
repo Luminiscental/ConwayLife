@@ -19,6 +19,7 @@ import           Control.Monad                  ( guard )
 import           Control.Concurrent             ( threadDelay )
 import           System.Console.ANSI            ( clearFromCursorToScreenBeginning
                                                 , hideCursor
+                                                , setCursorPosition
                                                 )
 
 type Board = Set (Int, Int)
@@ -85,5 +86,6 @@ displayGame board =
                 threadDelay 1000000
                     >> clearFromCursorToScreenBeginning
                     >> hideCursor
+                    >> setCursorPosition 0 0
                     >> putStrLn "Press Ctrl+C to Exit\n========"
     in  swapScreen >> sequence_ (intersperse swapScreen screens)
