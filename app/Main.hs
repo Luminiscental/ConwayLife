@@ -2,15 +2,9 @@ module Main where
 
 import           Lib
 import           Data.Set                       ( fromList )
+import           Data.Maybe                     ( fromMaybe )
 
-glider :: Board
-glider = fromList [(0, 0), (1, 0), (2, 0), (2, 1), (1, 2)]
-
-blinker :: Board
-blinker = fromList [(0, 0), (1, 0), (2, 0)]
-
-toad :: Board
-toad = fromList [(0, 0), (1, 0), (2, 0), (1, 1), (2, 1), (3, 1)]
+-- TODO: Commandline options to specify starting board
 
 main :: IO ()
-main = displayGame toad
+main = displayGame . fromMaybe emptyBoard . getNamedBoard $ "glider"

@@ -8,17 +8,19 @@ module Lib
     , getBounds
     , displayBoard
     , displayGame
+    , emptyBoard
+    , getNamedBoard
     )
 where
 
 import           Data.Set                       ( Set )
+import           Data.Map.Strict                ( Map )
+import qualified Data.Map.Strict               as M
 import qualified Data.Set                      as S
 import           Data.Maybe                     ( fromMaybe )
-import           Data.List                      ( intersperse )
 import           Control.Monad                  ( guard
                                                 , unless
                                                 )
-import           Control.Concurrent             ( threadDelay )
 import           System.Console.ANSI            ( clearFromCursorToScreenBeginning
                                                 , hideCursor
                                                 , showCursor
@@ -74,6 +76,27 @@ getBounds board =
         minY   = fromMaybe 0 $ S.lookupMin cellYs
         maxY   = fromMaybe 0 $ S.lookupMax cellYs
     in  ((minX, minY), (maxX, maxY))
+
+glider :: Board
+glider = S.fromList [(0, 0), (1, 0), (2, 0), (2, 1), (1, 2)]
+
+blinker :: Board
+blinker = S.fromList [(0, 0), (1, 0), (2, 0)]
+
+toad :: Board
+toad = S.fromList [(0, 0), (1, 0), (2, 0), (1, 1), (2, 1), (3, 1)]
+
+emptyBoard :: Board
+emptyBoard = S.empty
+
+namedBoards :: Map String Board
+namedBoards =
+    M.fromList [("glider", glider), ("blinker", blinker), ("toad", toad)]
+
+getNamedBoard :: String -> Maybe Board
+getNamedBoard = flip M.lookup namedBoards
+
+-- TODO: parseBoard :: Parser Board for command line input of initial board
 
 -- TODO: Make translation/axis positions clear
 displayBoard :: Board -> String
