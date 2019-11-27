@@ -1,5 +1,8 @@
+{-# LANGUAGE NamedFieldPuns #-}
+
 module Lib
     ( Board(..)
+    , Bounds(..)
     , neighbourGrid
     , countNeighbours
     , survives
@@ -10,6 +13,7 @@ module Lib
     , displayGame
     , emptyBoard
     , getNamedBoard
+    , translateBoard
     )
 where
 
@@ -33,15 +37,33 @@ import           System.IO                      ( stdin
 
 type Board = Set (Int, Int)
 
-gridRange :: ((Int, Int), (Int, Int)) -> [(Int, Int)]
-gridRange ((minX, minY), (maxX, maxY)) = do
-    x <- [minX .. maxX]
-    y <- [minY .. maxY]
+data Bounds = Bounds { minX :: Int, minY :: Int, maxX :: Int, maxY :: Int }
+
+boundWidth :: Bounds -> Int
+boundWidth b = maxX b - minX b
+
+boundHeight :: Bounds -> Int
+boundHeight b = maxY b - minY b
+
+extendBounds :: Bounds -> Bounds
+extendBounds b = Bounds { minX = minX b - 1
+                        , minY = minY b - 1
+                        , maxX = maxX b + 1
+                        , maxY = maxY b + 1
+                        }
+
+emptyBounds :: (Int, Int) -> Bounds
+emptyBounds (x, y) = Bounds { minX = x, minY = y, maxX = x, maxY = y }
+
+gridRange :: Bounds -> [(Int, Int)]
+gridRange b = do
+    x <- [minX b .. maxX b]
+    y <- [minY b .. maxY b]
     return (x, y)
 
 neighbourGrid :: (Int, Int) -> [(Int, Int)]
 neighbourGrid (x, y) = do
-    (x', y') <- gridRange ((x - 1, y - 1), (x + 1, y + 1))
+    (x', y') <- gridRange . extendBounds . emptyBounds $ (x, y)
     guard (x' /= x || y' /= y)
     return (x', y')
 
@@ -60,15 +82,14 @@ survives board position =
 
 stepBoard :: Board -> Board
 stepBoard board =
-    let ((minX, minY), (maxX, maxY)) = getBounds board
-        cellsToConsider              = S.fromList
-            $ gridRange ((minX - 1, minY - 1), (maxX + 1, maxY + 1))
+    let cellsToConsider =
+                S.fromList . gridRange . extendBounds . getBounds $ board
     in  S.filter (survives board) cellsToConsider
 
 playGame :: Board -> [Board]
 playGame board = board : playGame (stepBoard board)
 
-getBounds :: Board -> ((Int, Int), (Int, Int))
+getBounds :: Board -> Bounds
 getBounds board =
     let cellXs = S.map fst board
         cellYs = S.map snd board
@@ -76,7 +97,7 @@ getBounds board =
         maxX   = fromMaybe 0 $ S.lookupMax cellXs
         minY   = fromMaybe 0 $ S.lookupMin cellYs
         maxY   = fromMaybe 0 $ S.lookupMax cellYs
-    in  ((minX, minY), (maxX, maxY))
+    in  Bounds { minX, minY, maxX, maxY }
 
 glider :: Board
 glider = S.fromList [(0, 0), (1, 0), (2, 0), (2, 1), (1, 2)]
@@ -99,13 +120,14 @@ getNamedBoard = flip M.lookup namedBoards
 
 -- TODO: parseBoard :: Parser Board for command line input of initial board
 
--- TODO: Make translation/axis positions clear
-displayBoard :: Board -> String
-displayBoard board =
-    let ((minX, minY), (maxX, maxY)) = getBounds board
-        displayCell cell = if S.member cell board then '■' else ' '
-        displayRow y = [ displayCell (x, y) | x <- [minX .. maxX] ]
-        grid = map displayRow [minY .. maxY]
+-- TODO: Make axis/origin positions clear
+-- TODO: Dynamic resizing to cover all living cells maybe?
+displayBoard :: Bounds -> Board -> String
+displayBoard bounds board =
+    let displayCell cell = if S.member cell board then '■' else ' '
+        displayRow y =
+                [ displayCell (x, y) | x <- [minX bounds .. maxX bounds] ]
+        grid = map displayRow [minY bounds .. maxY bounds]
     in  displayGrid '|' '-' grid
 
 extrasperse :: a -> [a] -> [a]
@@ -118,17 +140,21 @@ displayGrid colSep rowSep grid =
         displayRow = extrasperse colSep
     in  unlines . extrasperse rowLine . map displayRow $ grid
 
-displayGame :: Board -> IO ()
-displayGame board =
+translateBoard :: Int -> Int -> Board -> Board
+translateBoard dx dy = S.map $ \(x, y) -> (x + dx, y + dy)
+
+-- TODO: Parametrize options in some reader monad
+displayGame :: Bounds -> Board -> IO ()
+displayGame bounds board =
     let game        = playGame board
-        screens     = map (putStrLn . displayBoard) game
-        title       = "Press enter to exit"
-        frameTimeMS = 1000
+        screens     = map (putStrLn . displayBoard bounds) game
+        title       = "<Press enter to exit>"
+        frameTimeMS = 500
         run (screen : rest) = do
             clearScreen
             setCursorPosition 0 0
             putStrLn title
-            putStrLn $ replicate (length title) '='
+            putStrLn ""
             screen
             pressed <- hWaitForInput stdin frameTimeMS
             unless pressed $ run rest
