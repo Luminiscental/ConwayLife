@@ -13,9 +13,11 @@ tests:
 copyright: 2019 Author name here
 maintainer: example@example.com
 dependencies:
+- parsec
 - ansi-terminal
 - extra
 - containers
+- options
 - base >= 4.7 && < 5
 name: ConwayLife
 version: 0.1.0.0

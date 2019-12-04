@@ -10,6 +10,9 @@ Projecct is built with `stack` the haskell tool stack, so can be built/run after
 ```sh
 $ git clone https://github.com/Luminiscental/ConwayLife
 $ cd ConwayLife
-$ stack run # or stack build
+$ stack run -- <options>
 ```
+
+Command-line options can be seen by passing the `--help` option.
+For an example game you can try passing `--board=".**,*...******.*..*.*..*,*****"`.
 

@@ -12,6 +12,7 @@ with 'animateGame' allowing its evoluation over time to be visualized on a comma
 module Lib
     ( Board(..)
     , Bounds(..)
+    , Parser
     , neighbourGrid
     , countNeighbours
     , aliveNext
@@ -21,11 +22,21 @@ module Lib
     , displayBoard
     , animateGame
     , emptyBoard
+    , parseBoard
     , getNamedBoard
+    , boardNames
     , translateBoard
     )
 where
 
+import           Text.Parsec                    ( Parsec
+                                                , ParseError
+                                                , runParser
+                                                , many
+                                                , sepBy
+                                                , (<?>)
+                                                )
+import           Text.Parsec.Char               ( char )
 import           Data.Set                       ( Set )
 import           Data.Map.Strict                ( Map )
 import qualified Data.Map.Strict               as M
@@ -36,6 +47,7 @@ import           Data.Tuple                     ( swap )
 import           Control.Monad                  ( guard
                                                 , unless
                                                 )
+import           Control.Applicative            ( (<|>) )
 import           System.Console.ANSI            ( clearScreen
                                                 , hideCursor
                                                 , showCursor
@@ -45,6 +57,8 @@ import           System.Console.ANSI            ( clearScreen
 import           System.IO                      ( stdin
                                                 , hWaitForInput
                                                 )
+
+type Parser = Parsec String ()
 
 -- | The 'Board' type represents a static board for the game of life.
 -- It is a set of active cells represented by their cartesian coordinates.
@@ -149,7 +163,25 @@ namedBoards =
 getNamedBoard :: String -> Maybe Board
 getNamedBoard = flip M.lookup namedBoards
 
--- TODO: parseBoard :: Parser Board for command line input of initial board
+-- | A list of names for boards that are supported.
+boardNames :: [String]
+boardNames = M.keys namedBoards
+
+boardFromGrid :: [[Bool]] -> Board
+boardFromGrid rows = S.fromList $ do
+    (row , y) <- zip rows [0 ..]
+    (cell, x) <- zip row [0 ..]
+    guard cell
+    return (x, y)
+
+parseBoard
+    :: String -- ^ source name
+    -> String -- ^ source text
+    -> Either ParseError Board
+parseBoard sourceName sourceText =
+    let cell  = (char '.' >> return False) <|> (char '*' >> return True)
+        board = boardFromGrid <$> many cell `sepBy` char ','
+    in  runParser board () sourceName sourceText
 
 -- | Display the cells of the board in a given region as a string.
 displayBoard :: Bounds -> Board -> String
@@ -192,7 +224,7 @@ centeredBounds (width, height) =
 
 -- | Adjust terminal dimensions to board dimensions to account for row/column separators.
 adjustDimensions :: (Int, Int) -> (Int, Int)
-adjustDimensions (x, y) = (conservativeHalve x, conservativeHalve y)
+adjustDimensions (x, y) = (conservativeHalve x, conservativeHalve y - 2)
 
 -- TODO: Allow input to translate the view
 -- TODO: Parametrize options
@@ -211,9 +243,9 @@ animateGame defaultBounds board = do
         screens     = map (putStrLn . displayBoard bounds) game
         title       = "<Press enter to exit>"
         frameTimeMS = 500
+        resetScreen = clearScreen >> setCursorPosition 0 0
         run (screen : rest) = do
-            clearScreen
-            setCursorPosition 0 0
+            resetScreen
             putStrLn title
             putStrLn ""
             screen
@@ -221,4 +253,5 @@ animateGame defaultBounds board = do
             unless pressed $ run rest
     hideCursor
     run screens
+    resetScreen
     showCursor
