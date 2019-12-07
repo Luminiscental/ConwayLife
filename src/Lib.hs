@@ -10,7 +10,7 @@ with 'animateGame' allowing its evoluation over time to be visualized on a comma
 -}
 
 module Lib
-    ( Board(..)
+    ( Board
     , Bounds(..)
     , Parser
     , neighbourGrid
@@ -34,7 +34,6 @@ import           Text.Parsec                    ( Parsec
                                                 , runParser
                                                 , many
                                                 , sepBy
-                                                , (<?>)
                                                 )
 import           Text.Parsec.Char               ( char )
 import           Data.Set                       ( Set )
@@ -70,12 +69,6 @@ data Bounds = Bounds { minX :: Int -- ^ The minimum x coordinate of the grid (in
                      , maxX :: Int -- ^ The maximum x coordinate of the grid (inclusive).
                      , maxY :: Int -- ^ The maximum y coordinate of the grid (inclusive).
                      }
-
-boundWidth :: Bounds -> Int
-boundWidth b = maxX b - minX b
-
-boundHeight :: Bounds -> Int
-boundHeight b = maxY b - minY b
 
 -- | Extend a region of the grid by growing in every direction.
 extendBounds :: Bounds -> Bounds
@@ -244,11 +237,12 @@ animateGame defaultBounds board = do
         title       = "<Press enter to exit>"
         frameTimeMS = 500
         resetScreen = clearScreen >> setCursorPosition 0 0
+        run []              = return ()
         run (screen : rest) = do
             resetScreen
             putStrLn title
             putStrLn ""
-            screen
+            _ <- screen
             pressed <- hWaitForInput stdin frameTimeMS
             unless pressed $ run rest
     hideCursor

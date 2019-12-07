@@ -69,7 +69,7 @@ getBoard (FromFile filename) = do
 getBoard (FromText text) = parseBoardIO "<command-line argument>" text
 
 main :: IO ()
-main = runCommand $ \options args -> case boardSpec options of
+main = runCommand $ \options _ -> case boardSpec options of
     Nothing   -> die "For help try --help"
     Just spec -> maybe (die "Could not create board") playBoard
         =<< getBoard spec
