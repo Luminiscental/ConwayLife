@@ -82,7 +82,7 @@ extendBounds b = Bounds { minX = minX b - 1
 unitBounds :: (Int, Int) -> Bounds
 unitBounds (x, y) = Bounds { minX = x, minY = y, maxX = x, maxY = y }
 
--- | Get a lit of all points in a region.
+-- | Get a list of all points in a region.
 gridRange :: Bounds -> [(Int, Int)]
 gridRange b = do
     x <- [minX b .. maxX b]
@@ -242,7 +242,7 @@ animateGame defaultBounds board = do
             resetScreen
             putStrLn title
             putStrLn ""
-            _ <- screen
+            _       <- screen
             pressed <- hWaitForInput stdin frameTimeMS
             unless pressed $ run rest
     hideCursor

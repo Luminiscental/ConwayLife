@@ -1,3 +1,10 @@
+{-|
+Module      : Main
+Description : The io interface library.
+Maintainer  : luminiscental01@gmail.com
+
+Defines the 'Options' interface for the cli tool and provides 'main'.
+-}
 module Main where
 
 import           Lib
@@ -10,11 +17,14 @@ import           Data.Maybe                     ( mapMaybe )
 import           Control.Applicative            ( liftA3 )
 import           System.Exit                    ( die )
 
+-- | The 'BoardSpec' type enumerates the different ways to specify the initial board state.
 data BoardSpec = FromText String | FromFile String | FromName String
 
 -- TODO: Options for board dimension, frametime, display characters
+-- | The 'GameOptions' record stores all the options passed to the command.
 newtype GameOptions = GameOptions { boardSpec :: Maybe BoardSpec }
 
+-- | Creates the 'GameOptions' from all the parameters that could have been provided.
 createOptions :: (Maybe String, Maybe String, Maybe String) -> GameOptions
 createOptions (boardText, boardFile, boardName) =
     case
@@ -54,11 +64,13 @@ instance Options GameOptions where
                 <$> uncurr3 (liftA3 (,,)) (boardText, boardFile, boardName)
         where uncurr3 f (x, y, z) = f x y z
 
+-- |  Parse a board, displaying any errors through IO.
 parseBoardIO :: String -> String -> IO (Maybe Board)
 parseBoardIO sourceName text = case parseBoard sourceName text of
     Left  err   -> print err >> return Nothing
     Right board -> return (Just board)
 
+-- | Load a board state from a 'BoardSpec' value (requires IO operations).
 getBoard :: BoardSpec -> IO (Maybe Board)
 getBoard (FromName name) = case getNamedBoard name of
     Nothing    -> putStrLn ("Unknown board " ++ show name) >> return Nothing
